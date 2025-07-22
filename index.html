@@ -9,12 +9,27 @@
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 </head>
 <body class="bg-black text-green-400 font-mono p-4">
+
   <div class="text-xl mb-2">🧠 3dvr-mind Terminal</div>
-  <div id="terminal" class="whitespace-pre-wrap mb-4 h-[60vh] overflow-y-auto"></div>
-  <form onsubmit="handleCommand(event)" class="flex space-x-2">
+
+  <div id="terminal" class="whitespace-pre-wrap mb-4 h-[50vh] overflow-y-auto bg-black border border-green-700 p-2 rounded"></div>
+
+  <form onsubmit="handleCommand(event)" class="flex space-x-2 mb-2">
     <span id="cwd" class="text-green-600">/</span>
-    <input id="input" autofocus class="flex-1 bg-black text-green-400 border-none focus:outline-none" />
+    <input id="input" autofocus class="flex-1 bg-black text-green-400 border-b border-green-400 focus:outline-none" />
   </form>
+
+  <!-- 🔘 Mobile Command Buttons -->
+  <div class="grid grid-cols-3 gap-2 text-sm mb-2">
+    <button onclick="quick('ls')" class="bg-green-800 p-2 rounded">ls</button>
+    <button onclick="quick('cd ..')" class="bg-green-800 p-2 rounded">cd ..</button>
+    <button onclick="quick('mkdir')" class="bg-green-800 p-2 rounded">mkdir</button>
+    <button onclick="quick('touch')" class="bg-green-800 p-2 rounded">touch</button>
+    <button onclick="quick('edit')" class="bg-green-800 p-2 rounded">edit</button>
+    <button onclick="quick('cat')" class="bg-green-800 p-2 rounded">cat</button>
+    <button onclick="quick('rm')" class="bg-green-800 p-2 rounded">rm</button>
+    <button onclick="quick('clear')" class="bg-green-800 p-2 rounded col-span-2">clear</button>
+  </div>
 
   <script>
     const gun = Gun();
@@ -41,19 +56,37 @@
       e.preventDefault();
       const input = document.getElementById('input');
       const cmd = input.value.trim();
-      log(`$ ${cmd}`);
+      runCommand(cmd);
       input.value = '';
+    }
 
+    function quick(command) {
+      let arg = '';
+      if (['mkdir', 'touch', 'edit', 'cat', 'rm'].includes(command)) {
+        arg = prompt(`Enter name for ${command}`);
+        if (!arg) return;
+        runCommand(`${command} ${arg}`);
+      } else {
+        runCommand(command);
+      }
+    }
+
+    function runCommand(cmd) {
+      log(`$ ${cmd}`);
       const args = cmd.split(' ');
       const command = args[0];
       const arg1 = args[1];
       const path = resolvePath(arg1 || '');
 
       if (command === 'ls') {
+        const seen = new Set();
         mind.map().once((data, key) => {
           if (key.startsWith(cwd) && key !== cwd) {
             const relative = key.slice(cwd.length).split('/')[0];
-            if (relative) log(relative);
+            if (relative && !seen.has(relative)) {
+              seen.add(relative);
+              log(relative);
+            }
           }
         });
       } else if (command === 'cd') {
@@ -105,7 +138,7 @@
     }
 
     updateCWDDisplay();
-    log('Welcome to 3dvr-mind Terminal 🧠\nType `help` for commands');
+    log('Welcome to 3dvr-mind Terminal 🧠\nType `help` for commands or use the buttons below.');
   </script>
 </body>
 </html>
