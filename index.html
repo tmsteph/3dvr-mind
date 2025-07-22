@@ -32,24 +32,17 @@
       el.className = 'pl-4 border-l border-gray-600';
 
       const label = document.createElement('span');
-      label.textContent = `${data.type === 'folder' ? '📁' : '📄'} ${name}`;
+      label.textContent = `📁 ${name}`;
+      if (data.type === 'file') label.textContent = `📄 ${name}`;
       label.contentEditable = true;
-      label.className = "cursor-pointer";
-      label.onblur = () => {
-        const newName = label.textContent.trim().replace(/^📁 |^📄 /, '');
-        if (newName && newName !== name) {
-          const newItem = { ...data, name: newName };
-          mind.get(newName).put(newItem);
-          mind.get(name).put(null); // Optionally delete old
-          load();
-        }
-      };
+      label.onblur = () => mind.get(name).put({ ...data, name: label.textContent });
       el.appendChild(label);
 
-      if (data.type === 'folder') {
-        mind.get(name).get('children').map().once((childData, childName) => {
-          if (!childData || !childData.type) return;
-          el.appendChild(renderItem(childName, childData));
+      if (data.type === 'folder' && data.children) {
+        Object.keys(data.children).forEach(child => {
+          mind.get(name).get('children').get(child).once(childData => {
+            el.appendChild(renderItem(child, childData));
+          });
         });
       }
 
@@ -71,8 +64,6 @@
 
       const newItem = { type, name };
       mind.get(name).put(newItem);
-      if (type === 'folder') mind.get(name).get('children').put({}); // init children
-
       document.getElementById('new-name').value = '';
       load();
     }
